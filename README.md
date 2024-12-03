@@ -2,6 +2,6 @@
 ### Usage
 
 ```
-function ac() { pbpaste | sbt "run $1" }
+function ac() { pbpaste | sbt "runMain $1" }
 ac Day1
 ```
