@@ -3,19 +3,49 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.{Map, HashMap}
 import scala.util.matching.Regex.Match
 import scala.collection.immutable.Vector
-import scala.util.ChainingOps._
 
 /*
 XXMAS
 MSMSS
 AXXAX
 SAMXS
+
+
+MMMSXXMASM
+MSAMXMSMSA
+AMXSXMAAMM
+MSAMASMSMX
+XMASAMXAMM
+XXAMMXXAMA
+SMSMSASXSS
+SAXAMASAAA
+MAMMMXMMMM
+MXMXAXMASX
+
+
  */
 object Day4 {
   def main(args: Array[String]): Unit = {
     val in = Source.stdin.mkString
-    val parsed = parseMatrix(in)
-    println(count1(parsed))
+    println(count2(in))
+  }
+
+  // part 2
+  def count2(in: String) = {
+    // HACK
+    // compile a regex that will match X-MAS across rows
+    // eg in a width-5 matrix, X-MAS pattern is 'M.S(.|\n){2}.A.(.|\n){2}M.S'
+    // here dots may not match newline
+    val width = in.linesIterator.next.length
+    val distBetween = width - 3 + 1 // 3 for pattern width, 1 for the newline
+    val pat = // needs lookahead to find overlapping matches!
+      s"""(M|S)(?=.(M|S)(?:.|\\n){$distBetween}.A.(?:.|\\n){$distBetween}(M|S).(M|S))""".r
+    println(pat)
+    // check captures are ok
+    pat
+      .findAllMatchIn(in)
+      .count((x) => (x.group(1) != x.group(4) && x.group(2) != x.group(3)))
+
   }
 
   def parseMatrix(in: String): Vector[Vector[Char]] = {
@@ -23,7 +53,8 @@ object Day4 {
     Vector.from(vecs)
   }
   // part 1
-  def count1(m: Vector[Vector[Char]]) = {
+  def count1(in: String) = {
+    val m = parseMatrix(in)
     val width = m(0).length
     val height = m.length
     def cols =
