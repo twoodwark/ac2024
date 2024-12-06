@@ -1,6 +1,6 @@
 import scala.io.Source
 import scala.collection.mutable.{Set, HashMap}
-
+import scala.util.chaining._
 /*
  */
 object Day5 {
@@ -8,8 +8,32 @@ object Day5 {
       left: Int,
       right: Int
   )
+
   def main(args: Array[String]): Unit = {
-    println(part1.tupled(parseIn))
+    val (rules, updates) = parseIn
+    val sortRules = rules.map(r => ((r.left, r.right))).toSet
+
+    def sortUpdate(u: List[Int]) =
+      u.sortWith { (a, b) => sortRules.contains((a, b)) }
+
+    def isValid(u: List[Int]) =
+      sortUpdate(u) == u
+
+    val byvalid = updates.groupBy(isValid)
+
+    // part 1
+    byvalid(true)
+      .map(centrepage)
+      .sum
+      .pipe(println)
+
+    // part 2
+    byvalid(false)
+      .map(sortUpdate)
+      .map(centrepage)
+      .sum
+      .pipe(println)
+
   }
 
   def parseIn = {
@@ -28,34 +52,4 @@ object Day5 {
   }
 
   def centrepage(l: List[Int]) = l(l.length / 2)
-  def part1(rules: List[Rule], updates: List[List[Int]]) = {
-    // key rules both ways
-    val rulesByLeft = new HashMap[Int, Set[Rule]].withDefault(_ => Set.empty)
-    val rulesByRight = new HashMap[Int, Set[Rule]].withDefault(_ => Set.empty)
-    for (r <- rules) {
-      rulesByLeft.getOrElseUpdate(r.left, Set.empty).add(r)
-      rulesByRight.getOrElseUpdate(r.right, Set.empty).add(r)
-    }
-
-    def isValid(u: List[Int]) = {
-      val pendingRules = Set[Rule]()
-      u.foreach { page =>
-        // find any rightrules that reference this number
-        // we can remove them from the pending list
-        pendingRules.subtractAll(rulesByRight(page))
-        // add any leftrules that reference this number
-        pendingRules.addAll(rulesByLeft(page))
-      }
-      val pages = u.toSet
-      // Valid unless pending rules reference present pages
-      !pendingRules.exists { r =>
-        pages.contains(r.right) && pages.contains(r.left)
-      }
-    }
-
-    updates
-      .filter(isValid)
-      .map(centrepage)
-      .sum
-  }
 }
