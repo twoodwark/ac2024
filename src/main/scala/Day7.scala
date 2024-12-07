@@ -15,13 +15,18 @@ import scala.util.chaining._
  */
 object Day7 {
   type Problem = (Long, List[Long])
-  val ops = Array((a: Long, b: Long) => a + b, (a: Long, b: Long) => a * b)
   def main(args: Array[String]): Unit = {
     val problems = parseProblems
-    println(part1(problems))
+    // part 1
+    count(problems, Array(_ + _, _ * _)).pipe(println)
+    // part 2
+    count(
+      problems,
+      Array(_ + _, _ * _, (a, b) => (a.toString + b.toString).toLong)
+    ).pipe(println)
   }
 
-  def parseProblems = {
+  def parseProblems =
     Source.stdin
       .getLines()
       .map { (l) =>
@@ -30,9 +35,8 @@ object Day7 {
         (test, rest)
       }
       .toList
-  }
 
-  def part1(problems: List[Problem]) = {
+  def count(problems: List[Problem], ops: Array[(Long, Long) => Long]) = {
     // recursive DFS
     def solve(test: Long, acc: Long, values: List[Long]): Boolean = {
       if (values.isEmpty) return test == acc
