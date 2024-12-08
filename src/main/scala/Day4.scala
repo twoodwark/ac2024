@@ -5,24 +5,6 @@ import scala.util.matching.Regex.Match
 import scala.collection.immutable.Vector
 
 /*
-XXMAS
-MSMSS
-AXXAX
-SAMXS
-
-
-MMMSXXMASM
-MSAMXMSMSA
-AMXSXMAAMM
-MSAMASMSMX
-XMASAMXAMM
-XXAMMXXAMA
-SMSMSASXSS
-SAXAMASAAA
-MAMMMXMMMM
-MXMXAXMASX
-
-
  */
 object Day4 {
   def main(args: Array[String]): Unit = {
