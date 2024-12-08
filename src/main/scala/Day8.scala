@@ -1,7 +1,6 @@
 import scala.io.Source
 import scala.util.chaining._
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 /*
  */
 object Day8 {
@@ -9,6 +8,7 @@ object Day8 {
   def main(args: Array[String]): Unit =
     val (locs, maxXY) = parseAnttennaLocationsAndMapDimensions
     part1(locs, maxXY).pipe(println)
+    part2(locs, maxXY).pipe(println)
 
   def parseAnttennaLocationsAndMapDimensions: (Map[Char, List[XY]], XY) = {
     val in = Source.stdin.getLines.toArray
@@ -30,14 +30,15 @@ object Day8 {
   def gradient(c1: XY, c2: XY) =
     add((-c1._1, -c1._2), c2)
 
-  def antinodes(c1: XY, c2: XY) =
+  def antinodes1(c1: XY, c2: XY) =
     if c1 == c2 then throw Exception()
     val (dx, dy) = gradient(c1, c2)
     Set(add((dx, dy), c2), add((-dx, -dy), c1))
 
+    // oops! just use List.combinations
   def allPairs[T](l: List[T]): Iterable[(T, T)] =
-    var rest: List[T] = l
-    val r = ListBuffer[(T, T)]()
+    var rest = l
+    val r = mutable.ListBuffer[(T, T)]()
     while rest.nonEmpty
     do
       for (n <- rest.tail)
@@ -46,15 +47,39 @@ object Day8 {
     r.view
 
   def part1(locs: Map[Char, List[XY]], maxXY: XY): Int = {
-    println(("maxXy", maxXY))
-    val foundNodes = locs.values.flatMap { (coords) =>
-      for
-        (c1, c2) <- allPairs(coords)
-        (x, y) <- antinodes(c1, c2)
-        if x >= 0 && y >= 0 && x <= maxXY._1 && y <= maxXY._2
-      yield (x, y)
-      // println(("found", c1, c2, x, y))
-    }
+    val foundNodes = for
+      coords <- locs.values
+      (c1, c2) <- allPairs(coords)
+      (x, y) <- antinodes1(c1, c2)
+      if x >= 0 && y >= 0 && x <= maxXY._1 && y <= maxXY._2
+    yield (x, y)
+
+    foundNodes.toSet.size
+  }
+
+  def part2(locs: Map[Char, List[XY]], maxXY: XY): Int = {
+    val (maxX, maxY) = maxXY
+    def okNode(x: Int, y: Int) =
+      x >= 0 && y >= 0 && x <= maxX && y <= maxY
+    def antinodes2(c1: XY, c2: XY) =
+      if c1 == c2 then throw Exception()
+      val (dx, dy) = gradient(c1, c2)
+      val c1nodes = Iterator
+        .from(0)
+        .map { i => add((-i * dx, -i * dy), c1) }
+        .takeWhile(okNode)
+      val c2nodes = Iterator
+        .from(0)
+        .map { i => add((i * dx, i * dy), c2) }
+        .takeWhile(okNode)
+      c1nodes.concat(c2nodes)
+
+    val foundNodes = for
+      coords <- locs.values
+      (c1, c2) <- allPairs(coords)
+      (x, y) <- antinodes2(c1, c2)
+    yield (x, y)
+
     foundNodes.toSet.size
   }
 }
