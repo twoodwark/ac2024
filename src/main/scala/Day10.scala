@@ -3,16 +3,7 @@ import scala.util.chaining._
 import scala.collection.mutable
 import scala.annotation.tailrec
 /*
-89010123
-78121874
-87430965
-96549874
-45678903
-32019012
-01329801
-10456732
  */
-
 type XY = (Int, Int)
 extension (c: XY)(using what: Map[XY, Int])
   def moveBy(d: XY): XY = (c(0) + d(0), c(1) + d(1))
