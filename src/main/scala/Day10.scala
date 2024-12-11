@@ -26,9 +26,10 @@ object Day10 extends App {
   given Map[XY, Int] = parseMatrix
   val HEAD = 0
   val SUMMIT = 9
-  countPaths.pipe(println)
+  part1.pipe(println)
+  part2.pipe(println)
 
-  def countPaths(using mat: Map[XY, Int]) =
+  def part1(using mat: Map[XY, Int]) =
     val heads = mat.keySet.filter(_.value == HEAD).toList
     // recursive BFS
     @tailrec def count(
@@ -45,6 +46,21 @@ object Day10 extends App {
         total + found.size
       )
     heads.map(Set(_)).map(count(_)).sum
+
+  def part2(using mat: Map[XY, Int]) =
+    val heads = mat.keySet.filter(_.value == HEAD).toList
+    // err dfs
+    var cache = mutable.Map[XY, Long]()
+    def countDistinct(from: XY): Long =
+      cache.getOrElseUpdate(
+        from, {
+          val (found, check) = from.neighbours.partition { _.value == SUMMIT }
+          // current node has found.size distinct paths
+          // plus any paths from check
+          found.size + check.toList.map(countDistinct).sum
+        }
+      )
+    heads.map(countDistinct).sum
 
   def parseMatrix =
     Source.stdin.mkString.linesIterator.zipWithIndex
