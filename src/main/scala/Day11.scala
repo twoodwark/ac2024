@@ -22,6 +22,7 @@ case class Stone(value: Long) {
 object Day11 extends App {
   val stones = parseStones
   part1().pipe(println)
+  part2().pipe(println)
 
   def part1(blinks: Int = 25) =
     (0 to blinks - 1)
@@ -30,6 +31,17 @@ object Day11 extends App {
       }
       .length
 
+  def part2(blinks: Int = 75) =
+    val cache = mutable.Map[(Long, Int), Long]()
+    def count(s: Stone, remain: Int): Long =
+      if remain == 0 then return 1L
+      cache
+        .getOrElseUpdate(
+          (s.value, remain),
+          s.blink.map { ss => count(ss, remain - 1) }.sum
+        )
+    stones.map(count(_, blinks)).sum
+
   def parseStones =
-    Source.stdin.mkString.strip().split(" ").toList.map(_.toInt).map(Stone(_))
+    Source.stdin.mkString.strip().split(" ").toList.map(_.toLong).map(Stone(_))
 }
