@@ -23,12 +23,12 @@ object Day9 extends App {
       val spaces = sparse.reverseIterator.takeWhile(_.isSpace).size
       sparse.dropRightInPlace(spaces)
     }
-    def contents: Iterable[FileOrSpace] =
-      compacted.toIterable.map(Left(_)) ++ sparse.toIterable
+    def contents: Iterator[FileOrSpace] =
+      compacted.iterator.map(Left(_)) ++ sparse.iterator
     def contentsOffsets =
-      contents.view.scanLeft(0)(_ + _.length)
+      contents.scanLeft(0)(_ + _.length)
     def checksum: Long = {
-      for case (Left(File(id, length)), offset) <- contents.view.zip(
+      for case (Left(File(id, length)), offset) <- contents.zip(
           contentsOffsets
         )
       yield {
