@@ -4,16 +4,17 @@ import scala.collection.mutable
 import scala.annotation.tailrec
 /*
  */
-type XY = (Int, Int)
-extension (c: XY)(using what: Map[XY, Int])
-  def moveBy(d: XY): XY = (c(0) + d(0), c(1) + d(1))
-  def value = what(c)
-  def neighbours: Set[XY] =
-    val h = value
-    Set(moveBy(1, 0), moveBy(0, -1), moveBy(-1, 0), moveBy(0, 1))
-      .filter { o => h + 1 == o.value }
-
 object Day10 extends App {
+
+  type XY = (Int, Int)
+  extension (c: XY)(using what: Map[XY, Int])
+    def moveBy(d: XY): XY = (c(0) + d(0), c(1) + d(1))
+    def value = what(c)
+    def neighbours: Set[XY] =
+      val h = value
+      Set(moveBy(1, 0), moveBy(0, -1), moveBy(-1, 0), moveBy(0, 1))
+        .filter { o => h + 1 == o.value }
+
   given Map[XY, Int] = parseMatrix
   val HEAD = 0
   val SUMMIT = 9
