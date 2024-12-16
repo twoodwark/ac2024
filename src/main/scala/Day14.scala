@@ -10,11 +10,12 @@ object Day14 extends App {
   val SEC = 100
 
   part1.pipe(println)
+  part2()
   case class Bot(
       p: (Int, Int),
       v: (Int, Int)
   ) {
-    def step(times: Int) =
+    def step(times: Int = 1) =
       val dx = (WIDTH + v._1) % WIDTH
       val dy = (HEIGHT + v._2) % HEIGHT
       Bot(
@@ -34,28 +35,42 @@ object Day14 extends App {
       else None
   }
 
-  def part1 =
-    def print_(bts: Seq[Bot]) = {
-      for
-        y <- 0 until HEIGHT
-        x <- 0 until WIDTH
-      do
-        if x == 0 then println()
-        val count = bts.count(_.p == (x, y))
-        print(if count > 0 then count else '.')
-      println()
-    }
+  def print_(bts: Seq[Bot]) = {
+    for
+      y <- 0 until HEIGHT
+      x <- 0 until WIDTH
+    do
+      if x == 0 then println()
+      val count = bts.count(_.p == (x, y))
+      print(if count > 0 then count else '.')
+    println()
+  }
 
+  def part1 =
     val finalBots = bots.tap(print_).map(_.step(SEC)).tap(print_)
     finalBots
       .groupBy(_.quadrant)
       .removed(None)
       .view
       .mapValues(_.size)
-      .toMap
-      .tap(println)
       .values
       .product
+
+  def part2() =
+    var frame = 0
+    def maybeEasterEgg(bts: Seq[Bot]) =
+      val counts = bts.groupBy(_.p).values.map(_.size)
+      counts.count(_ > 1) == 0
+    Iterator
+      .iterate(bots) { b => b.map(_.step(1)) }
+      .take(1_000_000)
+      .foreach { b =>
+        if maybeEasterEgg(b) then
+          println(s"frame: $frame")
+          print_(b)
+          Thread.sleep(1250L)
+        frame += 1
+      }
 
   def parse =
     Source.stdin.mkString.linesIterator.collect { (s) =>
