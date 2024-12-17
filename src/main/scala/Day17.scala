@@ -55,13 +55,14 @@ object Day17 extends App {
     )
   )
 
-  val (state, program) = parse
+  lazy val (state, program) = parse
 
   part1.pipe(println)
+  part2.pipe(println)
 
-  def part1 =
-    val (finalState, _) = Iterator
-      .iterate((state, false)) { (s, _) =>
+  def runProg(s: State) =
+    Iterator
+      .iterate((s, false)) { (s, _) =>
         val ptr = s.instructionPointer
         if ptr >= program.length then (s, true)
         else
@@ -69,13 +70,34 @@ object Day17 extends App {
           val i = program(ptr + 1)
           val Instruction(name, op, arg) = INSTRUCTIONS(code)
           val operandVal = arg(s, i)
-          // println(s"$s  ||  @$ptr $name $operandVal")
           val nextS = op(s, operandVal)
           (nextS.copy(instructionPointer = nextS.instructionPointer + 2), false)
       }
       .find(_._2)
       .get
+      ._1
+
+  def part1 =
+    val finalState = runProg(state)
     finalState.output.mkString(",")
+
+  def part2 =
+    def findA(outputs: Seq[Int]): Set[Long] =
+      if outputs.isEmpty then return Set(0L) // a=zero at the end
+      val possibleAs = findA(outputs.tail)
+      for
+        nextA <- possibleAs
+        a = nextA << 3
+        bits <- (0 until 1 << 10)
+        candidate = a | bits
+        got = runProg(state.copy(a = candidate))
+        // TODO slow? could just check step by step?
+        if got.a == 0 && got.output == outputs
+      yield candidate.tap { c =>
+        // println(s"$c-> ${got.output.mkString(",")}")
+      }
+    val solutions = findA(program.toIndexedSeq)
+    solutions.min
 
   def parse =
     val Array(s, in) = Source.stdin.mkString.split("\n\n")
