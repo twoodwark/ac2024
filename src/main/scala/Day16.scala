@@ -17,47 +17,68 @@ object Day16 extends App {
   val (startNode, endNodes) = parse
 
   part1.pipe(println)
+  part2.pipe(println)
+
+  def part1 =
+    val (_, cost) = dijkstra(startNode, endNodes)
+    cost.toLong
+  def part2 =
+    val (bestPaths, _) = dijkstra(startNode, endNodes)
+    println(
+      s"${bestPaths.size} best paths from ${startNode} to ${endNodes}"
+    )
+    println(bestPaths(0))
+
+    bestPaths.flatten.map(_.xy).toSet.size
 
   trait Node[Self <: Node[?]] {
     def nextNodesWithCost: Map[Self, Double]
   }
 
-  def dijkstra[N <: Node[N]](start: N, end: Set[N]): (Seq[N], Double) =
-    val dists =
+  def dijkstra[N <: Node[N]](start: N, end: Set[N]): (Seq[Seq[N]], Double) =
+    // Total edge cost to get to the given node
+    val totalCost =
       mutable.Map[N, Double]().withDefaultValue(Double.PositiveInfinity)
-    dists += start -> 0d
+    totalCost += start -> 0d
     // Not to be processed
     val visited = mutable.Set[N]()
-    // Nodes mapped to the lowest-dist neighbour that leads to it
-    val pathFrom = mutable.Map[N, N]()
+    // Nodes mapped to every lowest-total neighbour that leads to it
+    val pathTo =
+      mutable.Map[N, mutable.Set[N]]().withDefault(_ => mutable.Set())
     // min-heap
-    case class QueuedNode(n: N, dist: Double) extends Ordered[QueuedNode]:
-      def compare(that: QueuedNode) = -this.dist.compare(that.dist)
-
+    case class QueuedNode(n: N, total: Double) extends Ordered[QueuedNode]:
+      def compare(that: QueuedNode) = -this.total.compare(that.total)
     val toVisit = mutable.PriorityQueue[QueuedNode](QueuedNode(start, 0d))
-    def lowest = end.minBy(dists(_))
+    def leastTotalCost = end.map(totalCost).min
     while {
-      toVisit.nonEmpty && toVisit.head.dist < dists(lowest)
+      toVisit.nonEmpty && toVisit.head.total < leastTotalCost
     }
     do {
-      val QueuedNode(node, dist) = toVisit.dequeue()
+      val QueuedNode(node, total) = toVisit.dequeue()
       visited += node
-      for (child, d) <- node.nextNodesWithCost
+      for (child, edgeCost) <- node.nextNodesWithCost
       do
-        val totalDist = d + dist
-        if totalDist < dists(child) then
-          dists += (child -> totalDist)
-          pathFrom += (child -> node)
-        if !visited.contains(child) then toVisit += QueuedNode(child, totalDist)
+        val childTotalCost = edgeCost + total
+        if childTotalCost <= totalCost(child) then
+          totalCost(child) = childTotalCost
+          pathTo(child) =
+            // parents would have had lower or equal total than current
+            // node when previously added to pathTo(child); but their edgeCost
+            // could have been higher.
+            pathTo(child).addOne(node)
+        if !visited.contains(child) then
+          toVisit += QueuedNode(child, childTotalCost)
     }
-    val endAt = lowest
-    val path = start ::
-      Iterator
-        .iterate(endAt)(pathFrom.apply)
-        .takeWhile(_ != start)
-        .toList
-        .reverse
-    (path, dists(endAt))
+    def allPaths(to: N): Seq[Seq[N]] =
+      val pathThis = Seq(to)
+      pathTo.get(to) match
+        case None          => Seq(pathThis) // a single path
+        case Some(parents) =>
+          // append this node to every path to a parent node
+          parents.toSeq.flatMap(allPaths).map(_ ++ pathThis)
+    val bestPaths =
+      end.toSeq.filter(totalCost(_) == leastTotalCost).flatMap(allPaths)
+    (bestPaths, leastTotalCost)
 
   type XY = (Int, Int)
   extension [T](c: XY)(using what: Map[XY, T])
@@ -79,19 +100,14 @@ object Day16 extends App {
       if next.value == WALL then rotated
       else rotated + (copy(xy = next) -> 1d)
 
-  def part1 =
-    val x = startNode.nextNodesWithCost
-    val (path, cost) = dijkstra(startNode, endNodes)
-    cost.toLong
-
   def parse =
     val grid = Source.stdin.mkString.linesIterator.zipWithIndex.flatMap {
       (l, y) =>
         l.zipWithIndex.map { (value, x) => ((x, y), value) }
     }.toMap
     given Map[(Int, Int), Char] = grid
-    val startLoc = grid.keys.find(xy => grid(xy) == START).head
-    val endLoc = grid.keys.find(xy => grid(xy) == END).head
+    val startLoc = grid.keys.find(_.value == START).head
+    val endLoc = grid.keys.find(_.value == END).head
     val startNode = GridN(DIRS.indexOf((1, 0)), startLoc)
     val endNodes =
       for d <- DIRS.indices
