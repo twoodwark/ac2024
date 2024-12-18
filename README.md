@@ -2,6 +2,6 @@
 ### Usage
 
 ```
-function ac() { pbpaste | sbt "runMain $1" }
-ac Day1
+function ad() { set -x ; cmd="$*"; pbpaste | sbt "runMain $cmd" }
+ad Day1
 ```

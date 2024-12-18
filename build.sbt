@@ -6,6 +6,7 @@ lazy val root = project
   .settings(
     name := "ac2024",
     version := "0.1.0-SNAPSHOT",
+    outputStrategy := Some(StdoutOutput),
     scalacOptions := Seq("-unchecked", "-deprecation"),
     scalaVersion := scala3Version,
     libraryDependencies += "org.scalameta" %% "munit" % "1.0.0" % Test
