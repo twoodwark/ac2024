@@ -3,9 +3,8 @@ import scala.util.chaining._
 import scala.collection.mutable
 import scala.collection.immutable
 /*
-
  */
-@main def Day18(size: Int) =
+@main def Day18 =
 
   trait Node[Self <: Node[?]]:
     def nextNodesWithCost: Map[Self, Double]
@@ -32,7 +31,7 @@ import scala.collection.immutable
     case class QueuedNode(n: N, total: Double) extends Ordered[QueuedNode]:
       def compare(that: QueuedNode) = -this.total.compare(that.total)
     val toVisit = mutable.PriorityQueue[QueuedNode](QueuedNode(start, 0d))
-    while toVisit.nonEmpty && toVisit.head != end
+    while toVisit.nonEmpty && toVisit.head.n != end
     do
       val QueuedNode(node, _) = toVisit.dequeue()
       if !visited.contains(node) then
@@ -67,7 +66,6 @@ import scala.collection.immutable
   val OUT = '?'
   val BLOCK = '#'
   val FREE = '.'
-  val maxX, maxY = size
   case class GridN(xy: XY)(using Map[XY, Char]) extends Node[GridN]:
     def nextNodesWithCost =
       DIRS
@@ -85,9 +83,6 @@ import scala.collection.immutable
         (x, y)
       .toSeq
 
-  def fall(xys: Seq[XY], on: Map[XY, Char]) =
-    on ++ xys.map(_ -> BLOCK)
-
   def printGrid(using what: Map[XY, Char]) =
     val maxX = what.keys.map(_._1).max
     val maxY = what.keys.map(_._2).max
@@ -99,16 +94,21 @@ import scala.collection.immutable
       print((x, y).value)
     println()
 
+  val bytes = parse
+  val maxX, maxY, size = bytes.map(_.max(_)).max
   val startXY = (0, 0)
   val endXY = (maxX, maxY)
-  val bytes = parse
-  def part1 =
-    val empty = for
-      x <- startXY._1 to endXY._1
-      y <- startXY._2 to endXY._2
-    yield (x, y) -> FREE
+  val empty = (for
+    x <- startXY._1 to maxX
+    y <- startXY._2 to maxY
+  yield (x, y) -> FREE).toMap.withDefaultValue(OUT)
 
-    val grid = fall(bytes.take(1024), empty.toMap.withDefaultValue(OUT))
+  def getGrid(n: Int) =
+    empty ++ bytes.take(n).map(_ -> BLOCK)
+
+  def part1 =
+    val take = if size == 6 then 12 else 1024
+    val grid = getGrid(take)
     given Map[XY, Char] = grid
     printGrid
 
@@ -119,4 +119,23 @@ import scala.collection.immutable
     )
     cost.get.toLong
 
+  def part2 =
+    def solve(grid: Map[XY, Char]) =
+      given Map[XY, Char] = grid
+      aStar(
+        GridN(startXY),
+        GridN(endXY),
+        heuristicCost = (n1, n2) => n1.xy.manhattan(n2.xy)
+      ).isDefined
+    var range = (0, bytes.length - 1) // (solved, unsolved)
+    def mid = range._1 + (range._2 - range._1) / 2
+    while mid > range._1
+    do
+      val isSolved = solve(getGrid(mid))
+      if isSolved then range = (mid, range._2)
+      else range = (range._1, mid)
+    printGrid(using getGrid(range._1))
+    bytes(range._1)
+
   part1.pipe(println)
+  part2.pipe(println)
