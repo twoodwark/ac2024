@@ -1,8 +1,6 @@
 import scala.io.Source
 import scala.util.chaining._
 import scala.collection.mutable
-import scala.collection.immutable
-import scala.compiletime.ops.boolean
 /*
  */
 @main def Day19 =
@@ -13,38 +11,43 @@ import scala.compiletime.ops.boolean
 
   val (parts, patterns) = parse
 
-  def part1 =
-    // recursive dfs
-    val cache = mutable.Map[String, Boolean]()
-    def search(pat: String): Boolean =
-      pat.isEmpty() || cache.getOrElseUpdate(
-        pat, {
-          val found = for
-            p <- parts
-            if pat.startsWith(p)
-          yield search(pat.drop(p.size))
-          found.find(identity).getOrElse(false)
-        }
-      )
+  def dfs_memoized[V, T](
+      terminate: PartialFunction[V, T],
+      step: V => Iterable[V],
+      reduce: Iterable[T] => T
+  ): V => T =
+    val cache = mutable.Map[V, T]()
+    lazy val search: V => T =
+      terminate.orElse: x =>
+        cache.getOrElseUpdate(
+          x,
+          reduce:
+            for n <- step(x)
+            yield search(n)
+        )
 
-    patterns.count(search)
+    search
+
+  def searchStep(pat: String) = for
+    p <- parts.view // avoid returning a set
+    if pat.startsWith(p)
+  yield pat.drop(p.size)
+
+  def part1 =
+    val get = dfs_memoized[String, Boolean](
+      { case x if x.isEmpty => true },
+      searchStep,
+      _.exists(identity)
+    )
+    patterns.count(get)
 
   def part2 =
-    val cache = mutable.Map[String, Long]()
-    def search(pat: String): Long =
-      if pat.isEmpty() then return 1
-      cache.getOrElseUpdate(
-        pat, {
-          val found = for
-            p <- parts.view
-            if pat.startsWith(p)
-          yield search(pat.drop(p.size))
-          // println(s"$pat = ${found.sum}")
-          found.sum
-        }
-      )
-
-    patterns.map(search).sum
+    val get = dfs_memoized[String, Long](
+      { case x if x.isEmpty => 1L },
+      searchStep,
+      _.sum.toLong
+    )
+    patterns.map(get).sum
 
   part1.pipe(println)
   part2.pipe(println)
