@@ -29,4 +29,22 @@ import scala.compiletime.ops.boolean
 
     patterns.count(search)
 
+  def part2 =
+    val cache = mutable.Map[String, Long]()
+    def search(pat: String): Long =
+      if pat.isEmpty() then return 1
+      cache.getOrElseUpdate(
+        pat, {
+          val found = for
+            p <- parts.view
+            if pat.startsWith(p)
+          yield search(pat.drop(p.size))
+          // println(s"$pat = ${found.sum}")
+          found.sum
+        }
+      )
+
+    patterns.map(search).sum
+
   part1.pipe(println)
+  part2.pipe(println)
